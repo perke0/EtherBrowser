@@ -1,57 +1,42 @@
+#include "MainWindow.h"
 #include <gtk/gtk.h>
-#include <webkit2/webkit2.h>
 
-static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
-    WebKitWebView *webview = WEBKIT_WEB_VIEW(user_data);  // Get the WebKitWebView
-
-    switch (event->keyval) {
-        case GDK_KEY_h: // Go back in history
-            webkit_web_view_go_back(webview);
-            break;
-        case GDK_KEY_l: // Go forward in history
-            webkit_web_view_go_forward(webview);
-            break;
-        case GDK_KEY_j: // Scroll down
-            webkit_web_view_evaluate_javascript(webview, "window.scrollBy(0, 100);", NULL, NULL, NULL);
-            break;
-        case GDK_KEY_k: // Scroll up
-            webkit_web_view_evaluate_javascript(webview, "window.scrollBy(0, -100);", NULL, NULL, NULL);
-            break;
-        case GDK_KEY_G: // Jump to bottom of page
-            webkit_web_view_evaluate_javascript(webview, "window.scrollTo(0, document.body.scrollHeight);", NULL, NULL, NULL);
-            break;
-        case GDK_KEY_g: // Jump to top of page
-            webkit_web_view_evaluate_javascript(webview, "window.scrollTo(0, 0);", NULL, NULL, NULL);
-            break;
-        // Add more cases for other Vim-like navigation commands...
-    }
-
-    return FALSE; // Return FALSE to allow further processing of the event
+MainWindow::MainWindow() {
+    // Constructor logic (if any)
 }
 
-void on_activate(GtkApplication *app, gpointer user_data) {
-    GtkWidget *window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "EtherBrowser");
-    gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
+MainWindow::~MainWindow() {
+    // Destructor logic (if any)
+}
 
-    // WebView setup
-    WebKitWebView *webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
-    gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(webview));
+void MainWindow::setup_ui(GtkWidget *window) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    search_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Search...");
 
-    // Load a URL to test
-    webkit_web_view_load_uri(webview, "https://www.example.com");
+    gtk_box_pack_start(GTK_BOX(box), search_entry, TRUE, TRUE, 0);
+    gtk_container_add(GTK_CONTAINER(window), box);
 
-    // Connect the key press event
-    g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press), webview);
+    // Connect the signal with the static method
+    g_signal_connect(search_entry, "activate", 
+        G_CALLBACK(MainWindow::on_search_entry_activate_static), 
+        this);
 
     gtk_widget_show_all(window);
 }
 
-int main(int argc, char *argv[]) {
-    GtkApplication *app = gtk_application_new("org.webkitgtk.example", G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
-    int status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app);
-    return status;
+void MainWindow::on_search_entry_activate(GtkWidget *widget) {
+    const gchar *text = gtk_entry_get_text(GTK_ENTRY(widget));
+    if (text && *text) {
+        // Execute the search or command
+        g_print("Search or Command: %s\n", text);
+    }
 }
+
+// Static method to wrap the non-static method call
+void MainWindow::on_search_entry_activate_static(GtkWidget *widget, gpointer data) {
+    MainWindow *windowInstance = static_cast<MainWindow*>(data);  // Convert 'data' to MainWindow pointer
+    windowInstance->on_search_entry_activate(widget);  // Call the instance method
+}
+
 
