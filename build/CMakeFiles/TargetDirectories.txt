@@ -1,4 +1,0 @@
-/home/x01/workspace/EtherBrowser/build/CMakeFiles/EtherBrowser.dir
-/home/x01/workspace/EtherBrowser/build/CMakeFiles/test.dir
-/home/x01/workspace/EtherBrowser/build/CMakeFiles/edit_cache.dir
-/home/x01/workspace/EtherBrowser/build/CMakeFiles/rebuild_cache.dir
