@@ -82,6 +82,19 @@ Steps for contributing:
     5. Push your changes and create a pull request.
 ### License
 This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.
-```python
-This is a fully formatted Markdown file that will render beautifully on GitHub or any other platform that supports Markdown rendering. Simply copy and paste it into your `README.md` file, and you're all set! Let me know if you'd like any further changes.
+```text
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2024 EtherOrganization
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+
+EtherBrowser is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+Matija Perovic is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 ```
