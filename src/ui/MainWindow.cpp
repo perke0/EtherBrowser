@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "../../include/MainWindow.h"
 #include <string>
 #include <iostream>
 #include <cstdlib>
