@@ -1,25 +1,24 @@
 #include <gtk/gtk.h>
 #include "ui/MainWindow.h"
 
-static void on_activate(GtkApplication *app, gpointer user_data) {
-    MainWindow *mainWindow = static_cast<MainWindow*>(user_data);
-    mainWindow->setup_ui(GTK_WIDGET(gtk_application_window_new(app)));
-}
-
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
-    GtkApplication *app = gtk_application_new("org.example.EtherBrowser", G_APPLICATION_DEFAULT_FLAGS);
+    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
     MainWindow mainWindow;
+    mainWindow.setup_ui(window);
 
-    // Connect the "activate" signal to the on_activate function
-    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &mainWindow);
+    gtk_window_set_title(GTK_WINDOW(window), "EtherBrowser");
+    gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
-    int status = g_application_run(G_APPLICATION(app), argc, argv);
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    g_object_unref(app);
-    return status;
+    gtk_widget_show_all(window);
+
+    gtk_main();
+
+    return 0;
 }
 
 

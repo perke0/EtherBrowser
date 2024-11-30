@@ -1,42 +1,88 @@
 #include "MainWindow.h"
-#include <gtk/gtk.h>
+#include <string>
+#include <iostream>
+#include <cstdlib>
 
-MainWindow::MainWindow() {
-    // Constructor logic (if any)
-}
-
-MainWindow::~MainWindow() {
-    // Destructor logic (if any)
-}
+MainWindow::MainWindow() : search_bar(nullptr), main_content(nullptr) {}
 
 void MainWindow::setup_ui(GtkWidget *window) {
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    search_entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Search...");
+    // Create a vertical box layout
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(window), vbox);
 
-    gtk_box_pack_start(GTK_BOX(box), search_entry, TRUE, TRUE, 0);
-    gtk_container_add(GTK_CONTAINER(window), box);
+    // Main content (normal browser view)
+    main_content = gtk_label_new("Welcome to EtherBrowser!\n   Press Ctrl + s for navibar");
+    gtk_box_pack_start(GTK_BOX(vbox), main_content, TRUE, TRUE, 0);
 
-    // Connect the signal with the static method
-    g_signal_connect(search_entry, "activate", 
-        G_CALLBACK(MainWindow::on_search_entry_activate_static), 
-        this);
+    // Hidden search bar
+    search_bar = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(search_bar), "Search or type a command...");
+    gtk_box_pack_start(GTK_BOX(vbox), search_bar, FALSE, FALSE, 0);
+    gtk_widget_hide(search_bar); // Hidden by default
 
-    gtk_widget_show_all(window);
+    // Connect the "activate" signal of the search bar
+    g_signal_connect(search_bar, "activate", G_CALLBACK(+[](GtkWidget *widget, gpointer data) {
+        MainWindow *self = static_cast<MainWindow *>(data);
+        self->on_search_entry_activate(widget);
+    }), this);
+
+    // Connect key press and release events
+    g_signal_connect(window, "key-press-event", G_CALLBACK(MainWindow::on_key_press), this);
+    g_signal_connect(window, "key-release-event", G_CALLBACK(MainWindow::on_key_release), this);
 }
 
-void MainWindow::on_search_entry_activate(GtkWidget *widget) {
-    const gchar *text = gtk_entry_get_text(GTK_ENTRY(widget));
-    if (text && *text) {
-        // Execute the search or command
-        g_print("Search or Command: %s\n", text);
+gboolean MainWindow::on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data) {
+    MainWindow *self = static_cast<MainWindow *>(data);
+    if (event->keyval == GDK_KEY_Control_L || event->keyval == GDK_KEY_Control_R) {
+        self->ctrl_pressed = true; // Track that Ctrl is pressed
+    }
+    if (self->ctrl_pressed && event->keyval == GDK_KEY_s) {
+        self->toggle_search_bar();
+        return TRUE; // Stop further propagation of the event
+    }
+    return FALSE; // Allow other handlers to process the event
+}
+
+gboolean MainWindow::on_key_release(GtkWidget *widget, GdkEventKey *event, gpointer data) {
+    MainWindow *self = static_cast<MainWindow *>(data);
+    if (event->keyval == GDK_KEY_Control_L || event->keyval == GDK_KEY_Control_R) {
+        self->ctrl_pressed = false; // Reset the Ctrl press state
+    }
+    return FALSE;
+}
+
+void MainWindow::toggle_search_bar() {
+    if (gtk_widget_get_visible(search_bar)) {
+        gtk_widget_hide(search_bar);
+        gtk_widget_grab_focus(main_content); // Refocus on main content
+    } else {
+        gtk_widget_show(search_bar);
+        gtk_widget_grab_focus(search_bar); // Focus the search bar
     }
 }
 
-// Static method to wrap the non-static method call
-void MainWindow::on_search_entry_activate_static(GtkWidget *widget, gpointer data) {
-    MainWindow *windowInstance = static_cast<MainWindow*>(data);  // Convert 'data' to MainWindow pointer
-    windowInstance->on_search_entry_activate(widget);  // Call the instance method
+void MainWindow::on_search_entry_activate(GtkWidget *widget) {
+    const char *input_text = gtk_entry_get_text(GTK_ENTRY(widget));
+    if (!input_text || input_text[0] == '\0') {
+        gtk_widget_hide(search_bar);
+        return;
+    }
+
+    if (input_text[0] == ':') {
+        std::string command(input_text + 1); // Strip the leading ':'
+        std::cout << "Executing command: " << command << std::endl;
+    } else {
+        std::string query(input_text);
+        std::string search_url = "https://www.google.com/search?q=" + query;
+        std::cout << "Searching for: " << search_url << std::endl;
+
+        // Open the search URL in the default browser
+        std::string open_command = "xdg-open \"" + search_url + "\"";
+        std::system(open_command.c_str());
+    }
+
+    gtk_entry_set_text(GTK_ENTRY(widget), ""); // Clear the entry
+    gtk_widget_hide(search_bar); // Hide the search bar after use
 }
 
 
