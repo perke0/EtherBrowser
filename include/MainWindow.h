@@ -6,18 +6,20 @@
 class MainWindow {
 public:
     MainWindow();
+    ~MainWindow();
     void setup_ui(GtkWidget *window);
+    void toggle_sidebar(bool show);
+    gboolean on_mouse_motion(GtkWidget *widget, GdkEventMotion *event, gpointer data);
+    gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data);
+    void load_styles(const char *css_path);
+    void execute_command(const gchar *command);
+    void search_query(const gchar *query);
 
 private:
-    GtkWidget *search_bar;      // The search/command bar
-    GtkWidget *main_content;    // The main browser content
-    bool ctrl_pressed = false;  // Tracks if Ctrl is pressed
-
-    // Event handlers
-    static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data);
-    static gboolean on_key_release(GtkWidget *widget, GdkEventKey *event, gpointer data);
-    void toggle_search_bar();   // Toggles the visibility of the search bar
-    void on_search_entry_activate(GtkWidget *widget); // Handles search/command bar input
+    GtkWidget *main_box;
+    GtkWidget *sidebar;
+    GtkWidget *search_entry;
+    GtkWidget *command_bar;
 };
 
 #endif // MAINWINDOW_H

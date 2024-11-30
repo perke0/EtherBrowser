@@ -1,88 +1,127 @@
 #include "../../include/MainWindow.h"
+#include <gtk/gtk.h>
 #include <string>
-#include <iostream>
-#include <cstdlib>
 
-MainWindow::MainWindow() : search_bar(nullptr), main_content(nullptr) {}
+static gboolean on_mouse_motion_wrapper(GtkWidget *widget, GdkEventMotion *event, gpointer data);
+static gboolean on_key_press_wrapper(GtkWidget *widget, GdkEventKey *event, gpointer data);
+
+MainWindow::MainWindow() : sidebar(nullptr), main_box(nullptr), search_entry(nullptr), command_bar(nullptr) {}
+MainWindow::~MainWindow() {}
 
 void MainWindow::setup_ui(GtkWidget *window) {
-    // Create a vertical box layout
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), vbox);
+    load_styles("resources/styles/dark.qss");
 
-    // Main content (normal browser view)
-    main_content = gtk_label_new("Welcome to EtherBrowser!\n   Press Ctrl + s for navibar");
-    gtk_box_pack_start(GTK_BOX(vbox), main_content, TRUE, TRUE, 0);
+    main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_container_add(GTK_CONTAINER(window), main_box);
 
-    // Hidden search bar
-    search_bar = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(search_bar), "Search or type a command...");
-    gtk_box_pack_start(GTK_BOX(vbox), search_bar, FALSE, FALSE, 0);
-    gtk_widget_hide(search_bar); // Hidden by default
+    sidebar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_size_request(sidebar, 200, -1); // Set the width of the sidebar
+    gtk_widget_set_name(sidebar, "sidebar");
 
-    // Connect the "activate" signal of the search bar
-    g_signal_connect(search_bar, "activate", G_CALLBACK(+[](GtkWidget *widget, gpointer data) {
-        MainWindow *self = static_cast<MainWindow *>(data);
-        self->on_search_entry_activate(widget);
-    }), this);
+    gtk_box_pack_start(GTK_BOX(main_box), sidebar, FALSE, FALSE, 0);
 
-    // Connect key press and release events
-    g_signal_connect(window, "key-press-event", G_CALLBACK(MainWindow::on_key_press), this);
-    g_signal_connect(window, "key-release-event", G_CALLBACK(MainWindow::on_key_release), this);
+    GtkWidget *label1 = gtk_label_new("Tab 1: Youtube");
+    GtkWidget *label2 = gtk_label_new("Tab 2: Twitter");
+    gtk_box_pack_start(GTK_BOX(sidebar), label1, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(sidebar), label2, FALSE, FALSE, 5);
+
+    gtk_widget_hide(sidebar);
+
+    GtkWidget *main_content = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_box_pack_start(GTK_BOX(main_box), main_content, TRUE, TRUE, 0);
+
+    GtkWidget *welcome_label = gtk_label_new("Welcome to Eth3r");
+    gtk_widget_set_name(welcome_label, "welcome_label");
+    gtk_box_pack_start(GTK_BOX(main_content), welcome_label, FALSE, FALSE, 0);
+
+    search_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(search_entry), "Search with Google");
+    gtk_widget_set_name(search_entry, "search_entry");
+    gtk_box_pack_start(GTK_BOX(main_content), search_entry, FALSE, FALSE, 0);
+
+    command_bar = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(command_bar), ": Enter command or search");
+    gtk_widget_set_name(command_bar, "command_bar");
+    gtk_widget_set_no_show_all(command_bar, TRUE);
+    gtk_box_pack_end(GTK_BOX(main_content), command_bar, FALSE, FALSE, 0);
+
+    // Static function as wrapper for signal handlers
+    g_signal_connect(window, "motion-notify-event", G_CALLBACK(on_mouse_motion_wrapper), this);
+    g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press_wrapper), this);
+
+    gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
+
+    gtk_widget_show_all(window);
 }
 
-gboolean MainWindow::on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data) {
+gboolean MainWindow::on_mouse_motion(GtkWidget *widget, GdkEventMotion *event, gpointer data) {
     MainWindow *self = static_cast<MainWindow *>(data);
-    if (event->keyval == GDK_KEY_Control_L || event->keyval == GDK_KEY_Control_R) {
-        self->ctrl_pressed = true; // Track that Ctrl is pressed
-    }
-    if (self->ctrl_pressed && event->keyval == GDK_KEY_s) {
-        self->toggle_search_bar();
-        return TRUE; // Stop further propagation of the event
-    }
-    return FALSE; // Allow other handlers to process the event
-}
-
-gboolean MainWindow::on_key_release(GtkWidget *widget, GdkEventKey *event, gpointer data) {
-    MainWindow *self = static_cast<MainWindow *>(data);
-    if (event->keyval == GDK_KEY_Control_L || event->keyval == GDK_KEY_Control_R) {
-        self->ctrl_pressed = false; // Reset the Ctrl press state
+    if (event->x < 10) {
+        self->toggle_sidebar(true);
+    } else if (event->x > 210) {
+        self->toggle_sidebar(false);
     }
     return FALSE;
 }
 
-void MainWindow::toggle_search_bar() {
-    if (gtk_widget_get_visible(search_bar)) {
-        gtk_widget_hide(search_bar);
-        gtk_widget_grab_focus(main_content); // Refocus on main content
+void MainWindow::toggle_sidebar(bool show) {
+    if (show) {
+        gtk_widget_show(sidebar);
     } else {
-        gtk_widget_show(search_bar);
-        gtk_widget_grab_focus(search_bar); // Focus the search bar
+        gtk_widget_hide(sidebar);
     }
 }
 
-void MainWindow::on_search_entry_activate(GtkWidget *widget) {
-    const char *input_text = gtk_entry_get_text(GTK_ENTRY(widget));
-    if (!input_text || input_text[0] == '\0') {
-        gtk_widget_hide(search_bar);
-        return;
+gboolean MainWindow::on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data) {
+    MainWindow *self = static_cast<MainWindow *>(data);
+    if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_s) {
+        gtk_widget_show(self->command_bar);
+        gtk_widget_grab_focus(self->command_bar);
+        return TRUE;
+    }
+    if (event->keyval == GDK_KEY_Return && gtk_widget_get_visible(self->command_bar)) {
+        const gchar *input = gtk_entry_get_text(GTK_ENTRY(self->command_bar));
+        if (input[0] == ':') {
+            self->execute_command(input + 1);
+        } else {
+            self->search_query(input);
+        }
+        gtk_widget_hide(self->command_bar);
+        gtk_widget_grab_focus(self->search_entry);
+        return TRUE;
+    }
+    return FALSE;
+}
+void MainWindow::load_styles(const char *css_path) {
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GdkScreen *screen = gdk_screen_get_default();
+    gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    GError *error = nullptr;
+    gtk_css_provider_load_from_path(provider, css_path, &error);
+    if (error) {
+        g_printerr("Failed to load CSS file: %s\n", error->message);
+        g_error_free(error);
     }
 
-    if (input_text[0] == ':') {
-        std::string command(input_text + 1); // Strip the leading ':'
-        std::cout << "Executing command: " << command << std::endl;
-    } else {
-        std::string query(input_text);
-        std::string search_url = "https://www.google.com/search?q=" + query;
-        std::cout << "Searching for: " << search_url << std::endl;
-
-        // Open the search URL in the default browser
-        std::string open_command = "xdg-open \"" + search_url + "\"";
-        std::system(open_command.c_str());
-    }
-
-    gtk_entry_set_text(GTK_ENTRY(widget), ""); // Clear the entry
-    gtk_widget_hide(search_bar); // Hide the search bar after use
+    g_object_unref(provider);
 }
 
+
+void MainWindow::execute_command(const gchar *command) {
+    g_print("Executing command: %s\n", command);
+}
+
+void MainWindow::search_query(const gchar *query) {
+    g_print("Searching for: %s\n", query);
+}
+static gboolean on_mouse_motion_wrapper(GtkWidget *widget, GdkEventMotion *event, gpointer data) {
+    MainWindow *self = static_cast<MainWindow*>(data);
+    return self->on_mouse_motion(widget, event, data);
+}
+
+static gboolean on_key_press_wrapper(GtkWidget *widget, GdkEventKey *event, gpointer data) {
+    MainWindow *self = static_cast<MainWindow*>(data);
+    return self->on_key_press(widget, event, data);
+}
 
