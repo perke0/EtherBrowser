@@ -29,7 +29,7 @@ EtherBrowser is a lightweight, highly customizable, and minimalistic web browser
 ### 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/EtherBrowser.git
+git clone https://github.com/perke0/EtherBrowser.git
 cd EtherBrowser
 ```
 ### 2. Install dependencies:
